@@ -61,6 +61,8 @@ public:
 
 private:
     
+    float mLFOPhase;
+    
     float mDelayTimeSmoothed;
     
     AudioParameterFloat* mDryWetParameter;
