@@ -237,7 +237,6 @@ void KadenzeChorusFlangerAudioProcessor::processBlock (AudioBuffer<float>& buffe
             mLFOPhase -= 1;
         }
         
-        float lfoOutMapped = jmap((float)lfoOut, -1.f, 1.f, 0.005f, 0.03f);
         
         mDelayTimeSmoothed = mDelayTimeSmoothed - 0.001 * (mDelayTimeSmoothed - lfoOutMapped);
         mDelayTimeInSamples = getSampleRate() * mDelayTimeSmoothed;
