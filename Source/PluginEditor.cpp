@@ -98,6 +98,8 @@ KadenzeChorusFlangerAudioProcessorEditor::KadenzeChorusFlangerAudioProcessorEdit
         *typeParameter = mType.getSelectedItemIndex();
         typeParameter->endChangeGesture();
     };
+    
+    mType.setSelectedItemIndex(*typeParameter);
 }
 
 KadenzeChorusFlangerAudioProcessorEditor::~KadenzeChorusFlangerAudioProcessorEditor()
