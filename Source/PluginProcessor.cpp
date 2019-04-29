@@ -48,7 +48,7 @@ KadenzeChorusFlangerAudioProcessor::KadenzeChorusFlangerAudioProcessor()
                                                                  1.f,
                                                                  0.f));
     
-    addParameter(mFeedbackParameter = new AudioParameterFloat("feecback",
+    addParameter(mFeedbackParameter = new AudioParameterFloat("feedback",
                                                               "Feedback",
                                                               0,
                                                               0.98,

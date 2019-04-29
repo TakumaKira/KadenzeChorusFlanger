@@ -34,8 +34,8 @@ KadenzeChorusFlangerAudioProcessorEditor::KadenzeChorusFlangerAudioProcessorEdit
     mDryWetSlider.onDragStart = [dryWetParameter] { dryWetParameter->beginChangeGesture(); };
     mDryWetSlider.onDragEnd = [dryWetParameter] { dryWetParameter->endChangeGesture(); };
     
-    AudioParameterFloat* feedbackParameter = (AudioParameterFloat*)params.getUnchecked(1);
-    
+    AudioParameterFloat* feedbackParameter = (AudioParameterFloat*)params.getUnchecked(4);
+
     mFeedbackSlider.setBounds(100, 0, 100, 100);
     mFeedbackSlider.setSliderStyle(Slider::SliderStyle::RotaryVerticalDrag);
     mFeedbackSlider.setTextBoxStyle(Slider::TextEntryBoxPosition::NoTextBox, true, 0, 0);
