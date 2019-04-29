@@ -207,6 +207,13 @@ void KadenzeChorusFlangerAudioProcessor::processBlock (AudioBuffer<float>& buffe
 {
     auto totalNumInputChannels  = getTotalNumInputChannels();
     auto totalNumOutputChannels = getTotalNumOutputChannels();
+    
+    DBG("DRY WET: " << *mDryWetParameter);
+    DBG("DEPTH: " << *mDepthParameter);
+    DBG("RATE: " << *mRateParameter);
+    DBG("PHASE: " << *mPhaseOffsetParameter);
+    DBG("FEEDBACK: " << *mFeedbackParameter);
+    DBG("TYPE: " << (int)*mTypeParameter);
 
     // In case we have more outputs than inputs, this code clears any output
     // channels that didn't contain input data, (because these aren't
