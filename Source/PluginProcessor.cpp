@@ -24,6 +24,52 @@ KadenzeChorusFlangerAudioProcessor::KadenzeChorusFlangerAudioProcessor()
                        )
 #endif
 {
+    addParameter(mDryWetParameter = new AudioParameterFloat("drywet",
+                                                            "Dry Wet",
+                                                            0.0,
+                                                            1.0,
+                                                            0.5));
+    
+    addParameter(mDepthParameter = new AudioParameterFloat("depth",
+                                                           "Depth",
+                                                           0.0,
+                                                           1.0,
+                                                           0.5));
+    
+    addParameter(mRateParameter = new AudioParameterFloat("rate",
+                                                          "Rate",
+                                                          0.1f,
+                                                          20.f,
+                                                          10.f));
+    
+    addParameter(mPhaseOffsetParameter = new AudioParameterFloat("phaseoffset",
+                                                                 "Phase Offset",
+                                                                 0.0f,
+                                                                 1.f,
+                                                                 0.f));
+    
+    addParameter(mFeedbackParameter = new AudioParameterFloat("feecback",
+                                                              "Feedback",
+                                                              0,
+                                                              0.98,
+                                                              0.5));
+    
+    addParameter(mTypeParameter = new AudioParameterInt("type",
+                                                        "Type",
+                                                        0,
+                                                        1,
+                                                        0));
+    
+    mDelayTimeSmoothed = 0;
+    mCircularBufferLeft = nullptr;
+    mCircularBufferRight = nullptr;
+    mCircularBufferWriteHead = 0;
+    mCircularBufferLength = 0;
+    mDelayTimeInSamples = 0;
+    mDelayReadHead = 0;
+    
+    mFeedbackLeft = 0;
+    mFeedbackRight = 0;
 }
 
 KadenzeChorusFlangerAudioProcessor::~KadenzeChorusFlangerAudioProcessor()
@@ -95,8 +141,33 @@ void KadenzeChorusFlangerAudioProcessor::changeProgramName (int index, const Str
 //==============================================================================
 void KadenzeChorusFlangerAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
 {
-    // Use this method as the place to do any pre-playback
-    // initialisation that you need..
+    mDelayTimeSmoothed = 1;
+    
+    mCircularBufferLength = sampleRate * MAX_DELAY_TIME;
+    
+    if (mCircularBufferLeft != nullptr) {
+        delete [] mCircularBufferLeft;
+        mCircularBufferLeft = nullptr;
+    }
+    
+    if (mCircularBufferLeft == nullptr) {
+        mCircularBufferLeft = new float[mCircularBufferLength];
+    }
+    
+    zeromem(mCircularBufferLeft, mCircularBufferLength * sizeof(float));
+    
+    if (mCircularBufferRight != nullptr) {
+        delete [] mCircularBufferRight;
+        mCircularBufferRight = nullptr;
+    }
+    
+    if (mCircularBufferRight == nullptr) {
+        mCircularBufferRight = new float[mCircularBufferLength];
+    }
+    
+    zeromem(mCircularBufferRight, mCircularBufferLength * sizeof(float));
+    
+    mCircularBufferWriteHead = 0;    
 }
 
 void KadenzeChorusFlangerAudioProcessor::releaseResources()
@@ -144,17 +215,45 @@ void KadenzeChorusFlangerAudioProcessor::processBlock (AudioBuffer<float>& buffe
     for (auto i = totalNumInputChannels; i < totalNumOutputChannels; ++i)
         buffer.clear (i, 0, buffer.getNumSamples());
 
-    // This is the place where you'd normally do the guts of your plugin's
-    // audio processing...
-    // Make sure to reset the state if your inner loop is processing
-    // the samples and the outer loop is handling the channels.
-    // Alternatively, you can process the samples with the channels
-    // interleaved by keeping the same state.
-    for (int channel = 0; channel < totalNumInputChannels; ++channel)
-    {
-        auto* channelData = buffer.getWritePointer (channel);
-
-        // ..do something to the data...
+    float* leftChannel = buffer.getWritePointer(0);
+    float* rightChannel = buffer.getWritePointer(1);
+    
+    for (int i = 0; i < buffer.getNumSamples(); i++) {
+        
+        mDelayTimeInSamples = getSampleRate() * mDelayTimeSmoothed;
+        
+        mCircularBufferLeft[mCircularBufferWriteHead] = leftChannel[i] + mFeedbackLeft;
+        mCircularBufferRight[mCircularBufferWriteHead] = rightChannel[i] + mFeedbackRight;
+        
+        mDelayReadHead = mCircularBufferWriteHead - mDelayTimeInSamples;
+        
+        if (mDelayReadHead < 0) {
+            mDelayReadHead += mCircularBufferLength;
+        }
+        
+        int readHead_x = (int)mDelayReadHead;
+        int readHead_x1 = readHead_x + 1;
+        float readHeadFloat = mDelayReadHead - readHead_x;
+        
+        if (readHead_x1 >= mCircularBufferLength) {
+            readHead_x1 -= mCircularBufferLength;
+        }
+        
+        float delay_sample_left = lin_interp(mCircularBufferLeft[readHead_x], mCircularBufferLeft[readHead_x1], readHeadFloat);
+        float delay_sample_right = lin_interp(mCircularBufferRight[readHead_x], mCircularBufferRight[readHead_x1], readHeadFloat);
+        
+        mFeedbackLeft = delay_sample_left * *mFeedbackParameter;
+        mFeedbackRight = delay_sample_right * *mFeedbackParameter;
+        
+        mCircularBufferWriteHead++;
+        
+        buffer.setSample(0, i, buffer.getSample(0, i) * (1 - *mDryWetParameter) + delay_sample_left * *mDryWetParameter);
+        buffer.setSample(1, i, buffer.getSample(1, i) * (1 - *mDryWetParameter) + delay_sample_right * *mDryWetParameter);
+        
+        if (mCircularBufferWriteHead >= mCircularBufferLength) {
+            mCircularBufferWriteHead = 0;
+        }
+        
     }
 }
 
@@ -181,6 +280,14 @@ void KadenzeChorusFlangerAudioProcessor::setStateInformation (const void* data, 
 {
     // You should use this method to restore your parameters from this memory block,
     // whose contents will have been created by the getStateInformation() call.
+}
+
+//==============================================================================
+// Added
+
+float KadenzeChorusFlangerAudioProcessor::lin_interp(float sample_x, float sample_x1, float inPhase)
+{
+    return (1 - inPhase) * sample_x + inPhase * sample_x1;
 }
 
 //==============================================================================

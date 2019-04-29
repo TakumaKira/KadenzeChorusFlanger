@@ -12,6 +12,8 @@
 
 #include "../JuceLibraryCode/JuceHeader.h"
 
+#define MAX_DELAY_TIME 2
+
 //==============================================================================
 /**
 */
@@ -55,7 +57,33 @@ public:
     void getStateInformation (MemoryBlock& destData) override;
     void setStateInformation (const void* data, int sizeInBytes) override;
 
+    float lin_interp(float sample_x, float sample_x1, float inPhase);
+
 private:
+    
+    float mDelayTimeSmoothed;
+    
+    AudioParameterFloat* mDryWetParameter;
+    AudioParameterFloat* mDepthParameter;
+    AudioParameterFloat* mRateParameter;
+    AudioParameterFloat* mPhaseOffsetParameter;
+    AudioParameterFloat* mFeedbackParameter;
+    
+    AudioParameterInt* mTypeParameter;
+    
+    
+    float mFeedbackLeft;
+    float mFeedbackRight;
+    
+    float mDelayTimeInSamples;
+    float mDelayReadHead;
+    
+    int mCircularBufferWriteHead;
+    int mCircularBufferLength;
+    
+    float* mCircularBufferLeft;
+    float* mCircularBufferRight;
+    
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (KadenzeChorusFlangerAudioProcessor)
 };
