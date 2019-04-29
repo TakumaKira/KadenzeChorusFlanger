@@ -30,9 +30,14 @@ private:
     // This reference is provided as a quick way for your editor to
     // access the processor object that created it.
     KadenzeChorusFlangerAudioProcessor& processor;
-
+    
     Slider mDryWetSlider;
+    Slider mDepthSlider;
+    Slider mRateSlider;
+    Slider mPhaseOffsetSlider;
     Slider mFeedbackSlider;
+    
+    ComboBox mType;
     
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (KadenzeChorusFlangerAudioProcessorEditor)
 };
