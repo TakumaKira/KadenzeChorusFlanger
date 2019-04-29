@@ -237,6 +237,7 @@ void KadenzeChorusFlangerAudioProcessor::processBlock (AudioBuffer<float>& buffe
             mLFOPhase -= 1;
         }
         
+        lfoOut *= *mDepthParameter;
         
         float lfoOutMapped = jmap(lfoOut, -1.f, 1.f, 0.005f, 0.03f);
         
