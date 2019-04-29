@@ -205,7 +205,6 @@ bool KadenzeChorusFlangerAudioProcessor::isBusesLayoutSupported (const BusesLayo
 
 void KadenzeChorusFlangerAudioProcessor::processBlock (AudioBuffer<float>& buffer, MidiBuffer& midiMessages)
 {
-    ScopedNoDenormals noDenormals;
     auto totalNumInputChannels  = getTotalNumInputChannels();
     auto totalNumOutputChannels = getTotalNumOutputChannels();
 
