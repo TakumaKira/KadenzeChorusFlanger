@@ -231,7 +231,7 @@ void KadenzeChorusFlangerAudioProcessor::processBlock (AudioBuffer<float>& buffe
         
         float lfoOut = sin(2*M_PI * mLFOPhase);
         
-        mLFOPhase += *mRateParameter * getSampleRate();
+        mLFOPhase += *mRateParameter / getSampleRate();
         
         if (mLFOPhase > 1) {
             mLFOPhase -= 1;
