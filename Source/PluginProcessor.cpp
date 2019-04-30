@@ -46,7 +46,7 @@ KadenzeChorusFlangerAudioProcessor::KadenzeChorusFlangerAudioProcessor()
                                                                  "Phase Offset",
                                                                  0.0f,
                                                                  1.f,
-                                                                 0.f));
+                                                                 0.5f));
     
     addParameter(mFeedbackParameter = new AudioParameterFloat("feedback",
                                                               "Feedback",
