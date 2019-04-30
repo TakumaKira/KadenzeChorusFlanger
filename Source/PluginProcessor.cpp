@@ -231,6 +231,8 @@ void KadenzeChorusFlangerAudioProcessor::processBlock (AudioBuffer<float>& buffe
         }
         
         float lfoOutRight = sin(2*M_PI * lfoPhaseRight);
+        
+        lfoOutRight *= *mDepthParameter;
         float lfoOutMappedRight = jmap(lfoOutRight, -1.f, 1.f, 0.005f, 0.03f);
         float delayTimeSamplesRight = getSampleRate() * lfoOutMappedRight;
         
