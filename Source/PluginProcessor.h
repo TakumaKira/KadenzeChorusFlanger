@@ -63,8 +63,6 @@ private:
     
     float mLFOPhase;
     
-    float mDelayTimeSmoothed;
-    
     AudioParameterFloat* mDryWetParameter;
     AudioParameterFloat* mDepthParameter;
     AudioParameterFloat* mRateParameter;
@@ -72,7 +70,6 @@ private:
     AudioParameterFloat* mFeedbackParameter;
     
     AudioParameterInt* mTypeParameter;
-    
     
     float mFeedbackLeft;
     float mFeedbackRight;

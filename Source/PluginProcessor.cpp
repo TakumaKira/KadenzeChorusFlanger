@@ -60,7 +60,6 @@ KadenzeChorusFlangerAudioProcessor::KadenzeChorusFlangerAudioProcessor()
                                                         1,
                                                         0));
     
-    mDelayTimeSmoothed = 0;
     mCircularBufferLeft = nullptr;
     mCircularBufferRight = nullptr;
     mCircularBufferWriteHead = 0;
@@ -143,7 +142,6 @@ void KadenzeChorusFlangerAudioProcessor::changeProgramName (int index, const Str
 //==============================================================================
 void KadenzeChorusFlangerAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
 {
-    mDelayTimeSmoothed = 1;
     mLFOPhase = 0;
     
     mCircularBufferLength = sampleRate * MAX_DELAY_TIME;
@@ -207,13 +205,6 @@ void KadenzeChorusFlangerAudioProcessor::processBlock (AudioBuffer<float>& buffe
 {
     auto totalNumInputChannels  = getTotalNumInputChannels();
     auto totalNumOutputChannels = getTotalNumOutputChannels();
-    
-    DBG("DRY WET: " << *mDryWetParameter);
-    DBG("DEPTH: " << *mDepthParameter);
-    DBG("RATE: " << *mRateParameter);
-    DBG("PHASE: " << *mPhaseOffsetParameter);
-    DBG("FEEDBACK: " << *mFeedbackParameter);
-    DBG("TYPE: " << (int)*mTypeParameter);
 
     // In case we have more outputs than inputs, this code clears any output
     // channels that didn't contain input data, (because these aren't
@@ -241,8 +232,7 @@ void KadenzeChorusFlangerAudioProcessor::processBlock (AudioBuffer<float>& buffe
         
         float lfoOutMapped = jmap(lfoOut, -1.f, 1.f, 0.005f, 0.03f);
         
-        mDelayTimeSmoothed = mDelayTimeSmoothed - 0.001 * (mDelayTimeSmoothed - lfoOutMapped);
-        mDelayTimeInSamples = getSampleRate() * mDelayTimeSmoothed;
+        mDelayTimeInSamples = getSampleRate() * lfoOutMapped;
         
         mCircularBufferLeft[mCircularBufferWriteHead] = leftChannel[i] + mFeedbackLeft;
         mCircularBufferRight[mCircularBufferWriteHead] = rightChannel[i] + mFeedbackRight;
