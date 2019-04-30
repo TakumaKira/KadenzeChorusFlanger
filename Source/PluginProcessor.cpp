@@ -334,8 +334,18 @@ void KadenzeChorusFlangerAudioProcessor::getStateInformation (MemoryBlock& destD
 
 void KadenzeChorusFlangerAudioProcessor::setStateInformation (const void* data, int sizeInBytes)
 {
-    // You should use this method to restore your parameters from this memory block,
-    // whose contents will have been created by the getStateInformation() call.
+    std::unique_ptr<XmlElement> xml(getXmlFromBinary(data, sizeInBytes));
+    
+    if (xml.get() != nullptr && xml->hasTagName("FlangerChorus"))
+    {
+        *mDryWetParameter = xml->getDoubleAttribute("DryWet");
+        *mDepthParameter = xml->getDoubleAttribute("Depth");
+        *mRateParameter = xml->getDoubleAttribute("Rate");
+        *mPhaseOffsetParameter = xml->getDoubleAttribute("PhaseOffset");
+        *mFeedbackParameter = xml->getDoubleAttribute("Feedback");
+        
+        *mTypeParameter = xml->getIntAttribute("Type");
+    }
 }
 
 //==============================================================================
