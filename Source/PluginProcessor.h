@@ -74,9 +74,6 @@ private:
     float mFeedbackLeft;
     float mFeedbackRight;
     
-    float mDelayTimeInSamples;
-    float mDelayReadHead;
-    
     int mCircularBufferWriteHead;
     int mCircularBufferLength;
     

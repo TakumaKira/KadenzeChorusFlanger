@@ -64,8 +64,6 @@ KadenzeChorusFlangerAudioProcessor::KadenzeChorusFlangerAudioProcessor()
     mCircularBufferRight = nullptr;
     mCircularBufferWriteHead = 0;
     mCircularBufferLength = 0;
-    mDelayTimeInSamples = 0;
-    mDelayReadHead = 0;
     
     mFeedbackLeft = 0;
     mFeedbackRight = 0;
@@ -232,20 +230,16 @@ void KadenzeChorusFlangerAudioProcessor::processBlock (AudioBuffer<float>& buffe
         
         float lfoOutMapped = jmap(lfoOut, -1.f, 1.f, 0.005f, 0.03f);
         
-        mDelayTimeInSamples = getSampleRate() * lfoOutMapped;
+        float delayTimeSamples = getSampleRate() * lfoOutMapped;
         
         mCircularBufferLeft[mCircularBufferWriteHead] = leftChannel[i] + mFeedbackLeft;
         mCircularBufferRight[mCircularBufferWriteHead] = rightChannel[i] + mFeedbackRight;
         
-        mDelayReadHead = mCircularBufferWriteHead - mDelayTimeInSamples;
+        float delayReadHead = mCircularBufferWriteHead - delayTimeSamples;
         
-        if (mDelayReadHead < 0) {
-            mDelayReadHead += mCircularBufferLength;
-        }
-        
-        int readHead_x = (int)mDelayReadHead;
+        int readHead_x = (int)delayReadHead;
         int readHead_x1 = readHead_x + 1;
-        float readHeadFloat = mDelayReadHead - readHead_x;
+        float readHeadFloat = delayReadHead - readHead_x;
         
         if (readHead_x1 >= mCircularBufferLength) {
             readHead_x1 -= mCircularBufferLength;
