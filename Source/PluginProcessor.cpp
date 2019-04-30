@@ -246,8 +246,17 @@ void KadenzeChorusFlangerAudioProcessor::processBlock (AudioBuffer<float>& buffe
         mCircularBufferRight[mCircularBufferWriteHead] = rightChannel[i] + mFeedbackRight;
         
         float delayReadHeadLeft = mCircularBufferWriteHead - delayTimeSamplesLeft;
+        
+        if (delayReadHeadLeft < 1) {
+            delayReadHeadLeft += mCircularBufferLength;
+        }
+        
         float delayReadHeadRight = mCircularBufferWriteHead - delayTimeSamplesRight;
-
+        
+        if (delayReadHeadRight < 1) {
+            delayReadHeadRight += mCircularBufferLength;
+        }
+        
         int readHeadLeft_x = (int)delayReadHeadLeft;
         int readHeadLeft_x1 = readHeadLeft_x + 1;
         float readHeadFloatLeft = delayReadHeadLeft - readHeadLeft_x;
