@@ -24,6 +24,9 @@ KadenzeChorusFlangerAudioProcessor::KadenzeChorusFlangerAudioProcessor()
                        )
 #endif
 {
+    
+    /** Construct and Add Our Parameters */
+    
     addParameter(mDryWetParameter = new AudioParameterFloat("drywet",
                                                             "Dry Wet",
                                                             0.0,
@@ -59,6 +62,8 @@ KadenzeChorusFlangerAudioProcessor::KadenzeChorusFlangerAudioProcessor()
                                                         0,
                                                         1,
                                                         0));
+    
+    /** initialize our data to default values */
     
     mCircularBufferLeft = nullptr;
     mCircularBufferRight = nullptr;
@@ -140,10 +145,16 @@ void KadenzeChorusFlangerAudioProcessor::changeProgramName (int index, const Str
 //==============================================================================
 void KadenzeChorusFlangerAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
 {
+    
+    /** initialize our data for the current sample rate, and reset things such as phase and writeheads */
+    
+    /** initialize the phase */
     mLFOPhase = 0;
     
+    /** calculate the circular buffer length */
     mCircularBufferLength = sampleRate * MAX_DELAY_TIME;
     
+    /** initialize the left buffer */
     if (mCircularBufferLeft != nullptr) {
         delete [] mCircularBufferLeft;
         mCircularBufferLeft = nullptr;
@@ -153,8 +164,10 @@ void KadenzeChorusFlangerAudioProcessor::prepareToPlay (double sampleRate, int s
         mCircularBufferLeft = new float[mCircularBufferLength];
     }
     
+    /** clear any junk data in new buffer */
     zeromem(mCircularBufferLeft, mCircularBufferLength * sizeof(float));
     
+    /** init the right */
     if (mCircularBufferRight != nullptr) {
         delete [] mCircularBufferRight;
         mCircularBufferRight = nullptr;
@@ -164,8 +177,10 @@ void KadenzeChorusFlangerAudioProcessor::prepareToPlay (double sampleRate, int s
         mCircularBufferRight = new float[mCircularBufferLength];
     }
     
+    /** clear any junk */
     zeromem(mCircularBufferRight, mCircularBufferLength * sizeof(float));
     
+    /** init the right head to 0 */
     mCircularBufferWriteHead = 0;    
 }
 
@@ -213,27 +228,48 @@ void KadenzeChorusFlangerAudioProcessor::processBlock (AudioBuffer<float>& buffe
     for (auto i = totalNumInputChannels; i < totalNumOutputChannels; ++i)
         buffer.clear (i, 0, buffer.getNumSamples());
 
+    /** obtain the left and right audio data pointers */
+    
     float* leftChannel = buffer.getWritePointer(0);
     float* rightChannel = buffer.getWritePointer(1);
     
+    
+    /** iterate through all the samples in the buffer */
     for (int i = 0; i < buffer.getNumSamples(); i++) {
         
+        /** write into our circular buffer */
+        mCircularBufferLeft[mCircularBufferWriteHead] = leftChannel[i] + mFeedbackLeft;
+        mCircularBufferRight[mCircularBufferWriteHead] = rightChannel[i] + mFeedbackRight;
+        
+        
+        /** generate the left lfo output */
         float lfoOutLeft = sin(2*M_PI * mLFOPhase);
         
+        /** calculate the right channel lfo phase */
         float lfoPhaseRight = mLFOPhase + *mPhaseOffsetParameter;
         
         if (lfoPhaseRight > 1) {
             lfoPhaseRight -= 1;
         }
         
+        /** generate the right channel lfo output */
         float lfoOutRight = sin(2*M_PI * lfoPhaseRight);
 
+        /** moving our lfo phase forward */
+        mLFOPhase += *mRateParameter / getSampleRate();
         
+        if (mLFOPhase > 1) {
+            mLFOPhase -= 1;
+        }
+        
+        /** control the lfo depth */
         lfoOutLeft *= *mDepthParameter;
         lfoOutRight *= *mDepthParameter;
         
         float lfoOutMappedLeft = 0;
         float lfoOutMappedRight = 0;
+        
+        /** map our lfo output to our desired delay times */
         
         /** chorus */
         if (*mTypeParameter == 0) {
@@ -246,32 +282,26 @@ void KadenzeChorusFlangerAudioProcessor::processBlock (AudioBuffer<float>& buffe
             lfoOutMappedRight = jmap(lfoOutRight, -1.f, 1.f, 0.001f, 0.005f);
         }
         
+        /** calculate the delay lengths in samples */
         float delayTimeSamplesLeft = getSampleRate() * lfoOutMappedLeft;
         float delayTimeSamplesRight = getSampleRate() * lfoOutMappedRight;
         
         
-        mLFOPhase += *mRateParameter / getSampleRate();
-        
-        if (mLFOPhase > 1) {
-            mLFOPhase -= 1;
-        }
-        
-        
-        mCircularBufferLeft[mCircularBufferWriteHead] = leftChannel[i] + mFeedbackLeft;
-        mCircularBufferRight[mCircularBufferWriteHead] = rightChannel[i] + mFeedbackRight;
-        
+        /** calculate the left read head position */
         float delayReadHeadLeft = mCircularBufferWriteHead - delayTimeSamplesLeft;
         
         if (delayReadHeadLeft < 1) {
             delayReadHeadLeft += mCircularBufferLength;
         }
         
+        /** calculate the right read head position */
         float delayReadHeadRight = mCircularBufferWriteHead - delayTimeSamplesRight;
         
         if (delayReadHeadRight < 1) {
             delayReadHeadRight += mCircularBufferLength;
         }
         
+        /** calculate linear interpolation points for left channel */
         int readHeadLeft_x = (int)delayReadHeadLeft;
         int readHeadLeft_x1 = readHeadLeft_x + 1;
         float readHeadFloatLeft = delayReadHeadLeft - readHeadLeft_x;
@@ -280,6 +310,8 @@ void KadenzeChorusFlangerAudioProcessor::processBlock (AudioBuffer<float>& buffe
             readHeadLeft_x1 -= mCircularBufferLength;
         }
         
+        
+        /** calculate linear interpolation points for right channel */
         int readHeadRight_x = (int)delayReadHeadRight;
         int readHeadRight_x1 = readHeadRight_x + 1;
         float readHeadFloatRight = delayReadHeadRight - readHeadRight_x;
@@ -288,6 +320,7 @@ void KadenzeChorusFlangerAudioProcessor::processBlock (AudioBuffer<float>& buffe
             readHeadRight_x1 -= mCircularBufferLength;
         }
         
+        /** generate left and right output samples */
         float delay_sample_left = lin_interp(mCircularBufferLeft[readHeadLeft_x], mCircularBufferLeft[readHeadLeft_x1], readHeadFloatLeft);
         float delay_sample_right = lin_interp(mCircularBufferRight[readHeadRight_x], mCircularBufferRight[readHeadRight_x1], readHeadFloatRight);
         
@@ -295,14 +328,16 @@ void KadenzeChorusFlangerAudioProcessor::processBlock (AudioBuffer<float>& buffe
         mFeedbackRight = delay_sample_right * *mFeedbackParameter;
         
         mCircularBufferWriteHead++;
-        
-        buffer.setSample(0, i, buffer.getSample(0, i) * (1 - *mDryWetParameter) + delay_sample_left * *mDryWetParameter);
-        buffer.setSample(1, i, buffer.getSample(1, i) * (1 - *mDryWetParameter) + delay_sample_right * *mDryWetParameter);
-        
+
         if (mCircularBufferWriteHead >= mCircularBufferLength) {
             mCircularBufferWriteHead = 0;
         }
         
+        float dryAmount = 1 - *mDryWetParameter;
+        float wetAmount = *mDryWetParameter;
+
+        buffer.setSample(0, i, buffer.getSample(0, i) * dryAmount + delay_sample_left * wetAmount);
+        buffer.setSample(1, i, buffer.getSample(1, i) * dryAmount + delay_sample_right * wetAmount);
     }
 }
 
