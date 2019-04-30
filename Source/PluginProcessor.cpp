@@ -220,10 +220,6 @@ void KadenzeChorusFlangerAudioProcessor::processBlock (AudioBuffer<float>& buffe
         
         float lfoOutLeft = sin(2*M_PI * mLFOPhase);
         
-        lfoOutLeft *= *mDepthParameter;
-        float lfoOutMappedLeft = jmap(lfoOutLeft, -1.f, 1.f, 0.005f, 0.03f);
-        float delayTimeSamplesLeft = getSampleRate() * lfoOutMappedLeft;
-        
         float lfoPhaseRight = mLFOPhase + *mPhaseOffsetParameter;
         
         if (lfoPhaseRight > 1) {
@@ -231,9 +227,26 @@ void KadenzeChorusFlangerAudioProcessor::processBlock (AudioBuffer<float>& buffe
         }
         
         float lfoOutRight = sin(2*M_PI * lfoPhaseRight);
+
         
+        lfoOutLeft *= *mDepthParameter;
         lfoOutRight *= *mDepthParameter;
-        float lfoOutMappedRight = jmap(lfoOutRight, -1.f, 1.f, 0.005f, 0.03f);
+        
+        float lfoOutMappedLeft = 0;
+        float lfoOutMappedRight = 0;
+        
+        /** chorus */
+        if (*mTypeParameter == 0) {
+            lfoOutMappedLeft = jmap(lfoOutLeft, -1.f, 1.f, 0.005f, 0.03f);
+            lfoOutMappedRight = jmap(lfoOutRight, -1.f, 1.f, 0.005f, 0.03f);
+        
+        /** flanger */
+        } else {
+            lfoOutMappedLeft = jmap(lfoOutLeft, -1.f, 1.f, 0.001f, 0.005f);
+            lfoOutMappedRight = jmap(lfoOutRight, -1.f, 1.f, 0.001f, 0.005f);
+        }
+        
+        float delayTimeSamplesLeft = getSampleRate() * lfoOutMappedLeft;
         float delayTimeSamplesRight = getSampleRate() * lfoOutMappedRight;
         
         
